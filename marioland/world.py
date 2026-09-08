@@ -1,19 +1,15 @@
 from typing import Dict
 
-from BaseClasses import Item, MultiWorld, ItemClassification
+from BaseClasses import Item, MultiWorld
+from worlds.AutoWorld import World
+
 from .items import (
     MarioLandItem,
     ITEM_NAME_TO_ID,
     create_item as create_mario_land_item,
 )
-
-from worlds.AutoWorld import World
-
-from .items import MarioLandItem, ITEM_NAME_TO_ID
-from .items import create_item as create_mario_land_item
 from .locations import MarioLandLocation, LOCATION_NAME_TO_ID
-from .regions import LEVELS, create_regions
-from .regions import ITEMLEVELS, create_regions
+from .regions import LEVELS, ITEMLEVELS, create_regions
 from .rules import set_rules
 
 
@@ -87,8 +83,9 @@ class MarioLandWorld(World):
     def set_completion_rules(self) -> None:
         self.multiworld.completion_condition[
             self.player
-        ] = lambda state: state.has_reached(
+        ] = lambda state: state.can_reach(
             "4-3 Clear",
+            "Location",
             self.player
         )
 

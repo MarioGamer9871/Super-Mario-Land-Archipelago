@@ -253,7 +253,7 @@ class MarioLandClient(BizHawkClient):
             # ---------------------------------------------------------
             # Locked level failsafe
             # ---------------------------------------------------------
-            if game_state == 0 and current_level is not None:
+            if game_state == (0 or 13) and current_level is not None:
                 if current_level not in ctx.unlocked_levels:
                     print(f"LOCKED LEVEL DETECTED: {current_level}")
                     print("Game over!")
