@@ -133,6 +133,30 @@ class MarioLandClient(BizHawkClient):
 
 
 
+            # ---------------------------------------------------------
+            # Game completion
+            # ---------------------------------------------------------
+            if game_state == 44:
+
+                if not getattr(ctx, "goal_sent", False):
+                    ctx.goal_sent = True
+
+                    print("SUPER MARIO LAND COMPLETED!")
+
+                    await ctx.send_msgs([
+                        {
+                            "cmd": "StatusUpdate",
+                            "status": 30,
+                        }
+                    ])
+
+            elif game_state != 44:
+                ctx.goal_sent = False
+
+
+
+
+
 
 
                 # ---------------------------------------------------------
@@ -250,6 +274,61 @@ class MarioLandClient(BizHawkClient):
 
 
 
+        # ---------------------------------------------------------
+        # Add received coins
+        # ---------------------------------------------------------
+        coins_to_add = getattr(ctx, "coins_to_add", 0)
+
+        if coins_to_add > 0:
+
+            values = await bizhawk.read(
+                ctx.bizhawk_ctx,
+                [
+                    (0x7A, 1, "HRAM"),  # FFFA - Coins
+                ],
+            )
+
+            coins_bcd = values[0][0]
+
+            # BCD -> decimal
+            coins = ((coins_bcd >> 4) * 10) + (coins_bcd & 0x0F)
+
+            # Add received coins
+            coins += coins_to_add
+
+            # Maximum coin count
+            if coins > 99:
+                coins = 99
+
+            # Decimal -> BCD
+            new_coins_bcd = ((coins // 10) << 4) | (coins % 10)
+
+            # Update actual coin count
+            await bizhawk.write(
+                ctx.bizhawk_ctx,
+                [
+                    (0x7A, [new_coins_bcd], "HRAM"),
+                ],
+            )
+
+            # Update visual coin count
+            tens = coins // 10
+            ones = coins % 10
+
+            await bizhawk.write(
+                ctx.bizhawk_ctx,
+                [
+                    (0x1829, [tens], "VRAM"),  # Tens
+                    (0x182A, [ones], "VRAM"),  # Ones
+                ],
+            )
+
+            print(
+                f"Added {coins_to_add} coin(s)! "
+                f"Total: {coins}"
+            )
+
+            ctx.coins_to_add = 0
 
 
         
@@ -283,3 +362,13 @@ class MarioLandClient(BizHawkClient):
                         f"Unlocked levels: "
                         f"{sorted(ctx.unlocked_levels)}"
                     )
+
+            if item_name == "Coin":
+                ctx.coins_to_add = getattr(ctx, "coins_to_add", 0) + 1
+
+                print(
+                    f"Received Coin! "
+                    f"Coins waiting to add: {ctx.coins_to_add}"
+                )
+
+                continue

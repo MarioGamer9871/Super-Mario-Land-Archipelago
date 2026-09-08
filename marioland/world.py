@@ -87,9 +87,8 @@ class MarioLandWorld(World):
     def set_completion_rules(self) -> None:
         self.multiworld.completion_condition[
             self.player
-        ] = lambda state: state.can_reach(
-            "4-3 Completion",
-            "Location",
+        ] = lambda state: state.has_reached(
+            "4-3 Clear",
             self.player
         )
 
