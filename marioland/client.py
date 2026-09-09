@@ -76,7 +76,7 @@ class MarioLandClient(BizHawkClient):
             return False
 
         ctx.game = self.game
-        ctx.items_handling = 0b001
+        ctx.items_handling = 0b111
         ctx.want_slot_data = True
 
         # 1-1 is always unlocked.
@@ -119,12 +119,14 @@ class MarioLandClient(BizHawkClient):
                     # Location IDs are 11, 12, 13, 21, 22, etc.
                     location_id = int(current_level.replace("-", ""))
 
-                    await ctx.send_msgs([
-                        {
-                            "cmd": "LocationChecks",
-                            "locations": [location_id],
-                        }
-                    ])
+                    if location_id not in ctx.locations_checked:
+                        ctx.locations_checked.add(location_id)
+                        await ctx.send_msgs([
+                            {
+                                "cmd": "LocationChecks",
+                                "locations": [location_id],
+                            }
+                        ])
 
                     print(f"Sent location check: {location_id}")
 
@@ -152,64 +154,6 @@ class MarioLandClient(BizHawkClient):
 
             elif game_state != 44:
                 ctx.goal_sent = False
-
-
-
-
-
-
-
-                # ---------------------------------------------------------
-                # Choose next level during end-of-level sequence
-                # ---------------------------------------------------------
-                if game_state == 6 and current_level is not None:
-
-                    if not getattr(ctx, "transition_handled", False):
-                        ctx.transition_handled = True
-
-                        # Levels that AP has unlocked, excluding the
-                        # level we just completed.
-                        available_levels = [
-                            level
-                            for level in ctx.unlocked_levels
-                            if level != current_level
-                        ]
-
-                        if available_levels:
-                            # Choose the earliest unlocked level.
-                            target_level = min(
-                                available_levels,
-                                key=lambda level: LEVEL_VALUES[level][1]
-                            )
-
-                            previous_level = get_previous_level(target_level)
-
-                            if previous_level is not None:
-                                previous_world, previous_index = (
-                                    LEVEL_VALUES[previous_level]
-                                )
-
-                                print(
-                                    f"Completed {current_level}"
-                                )
-                                print(
-                                    f"Next level: {target_level}"
-                                )
-                                print(
-                                    f"Writing previous level: "
-                                    f"{previous_level}"
-                                )
-
-                                await bizhawk.write(
-                                    ctx.bizhawk_ctx,
-                                    [
-                                        (0x34, [previous_world], "HRAM"),
-                                        (0x64, [previous_index], "HRAM"),
-                                    ],
-                                )
-
-                else:
-                    ctx.transition_handled = False
 
 
 
@@ -253,7 +197,7 @@ class MarioLandClient(BizHawkClient):
             # ---------------------------------------------------------
             # Locked level failsafe
             # ---------------------------------------------------------
-            if game_state == (0 or 13) and current_level is not None:
+            if game_state == 0 or game_state == 13 and current_level is not None:
                 if current_level not in ctx.unlocked_levels:
                     print(f"LOCKED LEVEL DETECTED: {current_level}")
                     print("Game over!")
@@ -334,11 +278,22 @@ class MarioLandClient(BizHawkClient):
         
 
     def on_package(
+
+   
         self,
         ctx: "BizHawkClientContext",
         cmd: str,
         args: dict
     ) -> None:
+
+        #REMOVE
+        print(
+            f"PACKET: {cmd} | "
+            f"INDEX: {args.get('index', 'N/A')} | "
+            f"ITEMS: {len(args.get('items', []))}"
+        )
+        #REMOVE
+
 
         if cmd != "ReceivedItems":
             return
