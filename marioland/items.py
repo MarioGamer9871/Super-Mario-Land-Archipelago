@@ -19,6 +19,13 @@ ITEM_NAME_TO_ID = {
     "World 4-3": 43,
 }
 
+
+#List of ALL Filler Items
+FILLER_ITEMS = [
+    "Coin",
+]
+
+
 class MarioLandItem(Item) :
     game = "Super Mario Land"
 

@@ -38,6 +38,77 @@ LEVEL_VALUES = {
     "4-3": (0x43, 11),
 }
 
+
+#Secret Area Values W1-W3 (0x74)
+SECRET_AREAS = {
+    "1-1": {
+        1: ("1-1 Secret Area 1", 111),
+        2: ("1-1 Secret Area 2", 112),
+    },
+
+    "1-3": {
+        2: ("1-3 Secret Area 1", 131),
+        1: ("1-3 Secret Area 2", 132),
+    },
+
+    "2-1": {
+        1: ("2-1 Secret Area 1", 211),
+        2: ("2-1 Secret Area 2", 212),
+    },
+
+    "2-2": {
+        1: ("2-2 Secret Area 1", 221),
+        2: ("2-2 Secret Area 2", 222),
+    },
+
+    "3-1": {
+        2: ("3-1 Secret Area 1", 311),
+        1: ("3-1 Secret Area 2", 312),
+    },
+
+    "3-2": {
+        1: ("3-2 Secret Area 1", 321),
+        2: ("3-2 Secret Area 2", 322),
+    },
+
+    "3-3": {
+        1: ("3-3 Secret Area 1", 331),
+        2: ("3-3 Secret Area 2", 332),
+    },
+}
+
+#Secret Area Values W4 (0x75)
+WORLD_4_SECRET_AREAS = {
+    "4-1": {
+        3: ("4-1 Secret Area 1", 411),
+        22: ("4-1 Secret Area 2", 412),
+    },
+
+    "4-2": {
+        6: ("4-2 Secret Area 1", 421),
+        18: ("4-2 Secret Area 2", 422),
+    },
+}
+
+#Find unlocked levels
+def get_next_unlocked_level(ctx, current_level):
+    if current_level not in LEVEL_VALUES:
+        return None
+
+    current_index = LEVEL_VALUES[current_level][1]
+
+    for level, (_, index) in LEVEL_VALUES.items():
+        if index > current_index and level in ctx.unlocked_levels:
+            return level
+
+    for level, (_, index) in LEVEL_VALUES.items():
+        if index < current_index and level in ctx.unlocked_levels:
+            return level
+
+    return None
+
+
+
 def get_previous_level(level: str):
     """Return the level immediately before the given level."""
     index = LEVEL_VALUES[level][1]
@@ -92,18 +163,72 @@ class MarioLandClient(BizHawkClient):
                     (0x33, 1, "HRAM"),  # FFB3 - Game State
                     (0x34, 1, "HRAM"),  # FFB4 - World/Level
                     (0x64, 1, "HRAM"),  # FFE4 - Level Index
+                    (0x74, 1, "HRAM"),  # Secret area value
+                    (0x75, 1, "HRAM"),  # World 4 secret area value
                 ],
             )
 
             game_state = values[0][0]
             world_level = values[1][0]
             level_index = values[2][0]
+            secret_area_value = values[3][0]
+            world_4_secret_value = values[4][0]
 
 
             current_level = get_level_from_values(
                 world_level,
                 level_index
             )
+
+
+
+
+
+            # ---------------------------------------------------------
+            # Secret Area Checks
+            # ---------------------------------------------------------
+
+            secret_location = None
+            secret_location_id = None
+
+            if current_level in SECRET_AREAS:
+                # Worlds 1-3 use HRAM 0x74
+                area = SECRET_AREAS[current_level].get(secret_area_value)
+
+                if area is not None:
+                    secret_location, secret_location_id = area
+
+            elif current_level in WORLD_4_SECRET_AREAS:
+                # World 4 uses HRAM 0x75
+                area = WORLD_4_SECRET_AREAS[current_level].get(
+                    world_4_secret_value
+                )
+
+                if area is not None:
+                    secret_location, secret_location_id = area
+
+
+            if secret_location_id is not None:
+                if secret_location_id not in ctx.locations_checked:
+                    print(
+                        f"Entered secret area: {secret_location}"
+                    )
+
+                    ctx.locations_checked.add(secret_location_id)
+
+                    await ctx.send_msgs([
+                        {
+                            "cmd": "LocationChecks",
+                            "locations": [secret_location_id],
+                        }
+                    ])
+
+                    print(
+                        f"Sent secret area location check: "
+                        f"{secret_location_id}"
+                    )
+
+
 
 
             # ---------------------------------------------------------
@@ -160,27 +285,77 @@ class MarioLandClient(BizHawkClient):
 
             ctx.level_select_initialized = False
 
+            # ---------------------------------------------------------
+            # Level Select
+            # ---------------------------------------------------------
             if game_state == 15:
-                # Enable Level Select
-                await bizhawk.write(
-                    ctx.bizhawk_ctx,
-                    [
-                        (0x1A, [2], "HRAM"),
-                    ],
-                )
+                # Freeze the game while we check/fix the selected level.
+                await bizhawk.lock(ctx.bizhawk_ctx)
 
- 
+                try:
+                    # Enable level select
+                    await bizhawk.write(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1A, [2], "HRAM"),
+                        ],
+                    )
+
+                    # Read the selection again while the game is frozen
+                    select_values = await bizhawk.read(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x34, 1, "HRAM"),  # FFB4
+                            (0x64, 1, "HRAM"),  # FFE4
+                        ],
+                    )
+
+                    selected_world = select_values[0][0]
+                    selected_index = select_values[1][0]
+
+                    selected_level = get_level_from_values(
+                        selected_world,
+                        selected_index
+                    )
+
+                    # If the selected level is locked, immediately replace it
+                    if (
+                        selected_level is not None
+                        and selected_level not in ctx.unlocked_levels
+                    ):
+                        next_level = get_next_unlocked_level(
+                            ctx,
+                            selected_level
+                        )
+
+                        if next_level is not None:
+                            next_world, next_index = LEVEL_VALUES[next_level]
+
+                            print(
+                                f"Skipping locked level "
+                                f"{selected_level} -> {next_level}"
+                            )
+
+                            await bizhawk.write(
+                                ctx.bizhawk_ctx,
+                                [
+                                    (0x34, [next_world], "HRAM"),
+                                    (0x64, [next_index], "HRAM"),
+                                ],
+                            )
+
+                finally:
+                    # Let the game continue.
+                    await bizhawk.unlock(ctx.bizhawk_ctx)
 
             else:
-                # We've left the title screen
-                ctx.level_select_initialized = False
-
                 await bizhawk.write(
                     ctx.bizhawk_ctx,
                     [
                         (0x1A, [0], "HRAM"),
                     ],
                 )
+
 
             # ---------------------------------------------------------
             # Find current level
@@ -206,6 +381,7 @@ class MarioLandClient(BizHawkClient):
                     await bizhawk.write(
                         ctx.bizhawk_ctx,
                         [
+                            (0x1A15, [0], "WRAM"),  # Set Lives to 0
                             (0x33, [1], "HRAM"),  # FFB3 = Game State 1 (dead)
                         ],
                     )

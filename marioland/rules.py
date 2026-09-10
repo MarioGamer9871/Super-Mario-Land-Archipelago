@@ -17,6 +17,8 @@ def set_rules(world):
         "4-2",
         "4-3",
     ]:
+
+
         entrance = next(
             entrance
             for entrance in menu.exits
