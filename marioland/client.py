@@ -143,6 +143,12 @@ class MarioLandClient(BizHawkClient):
             if system != "GB":
                 return False
 
+            rom_hash = await bizhawk.get_hash(ctx.bizhawk_ctx)
+
+            if rom_hash.lower() != "418203621b887caa090215d97e3f509b79affd3e":
+                return False
+
+
         except bizhawk.RequestFailedError:
             return False
 
