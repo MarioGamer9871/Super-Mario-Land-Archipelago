@@ -12,6 +12,8 @@ from .items import (
 from .locations import MarioLandLocation, LOCATION_NAME_TO_ID
 from .regions import LEVELS, ITEMLEVELS, create_regions
 from .rules import set_rules
+from rule_builder.rules import CanReachLocation
+
 
 #Reigon Logic
 LEVEL_LOCATIONS = {
@@ -156,14 +158,12 @@ class MarioLandWorld(World):
 
     def set_rules(self) -> None:
         set_rules(self)
-
-    def set_completion_rules(self) -> None:
-        self.multiworld.completion_condition[
-            self.player
-        ] = lambda state: state.can_reach(
-            "4-3 Clear",
-            "Location",
-            self.player
+        self.set_completion_rule(
+            lambda state: state.can_reach(
+                "4-3 Clear",
+                "Location",
+                self.player,
+            )
         )
 
     def fill_slot_data(self) -> Dict:

@@ -30,3 +30,5 @@ def set_rules(world):
             lambda state, level=level:
                 state.has(f"World {level}", world.player)
         )
+
+
