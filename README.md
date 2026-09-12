@@ -6,7 +6,7 @@ How to use:
 
 2. Generate a yaml and start a multiworld
 
-3. Open a "World Rev 1" or "World Rev A" rom (Other versions may work but have not been tested) of Super Mario Land using the Bizhawk Emulator
+3. Open a "1.0" or "1.1 (Rev 1)" rom (Other versions may work but have not been tested) of Super Mario Land using the Bizhawk Emulator
 
 4. Drag and drop "connector_bizhawk_generic.lua" found in "archipelago/data/lua" onto the emulator window
 
