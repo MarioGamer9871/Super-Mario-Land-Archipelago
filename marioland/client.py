@@ -165,10 +165,16 @@ class MarioLandClient(BizHawkClient):
         # 1-1 is always unlocked.
         ctx.unlocked_levels = {"1-1"}
 
+        ctx.starting_lives_set = False
+
+        ctx.power_up_level = 0
+        ctx.star_unlocked = False 
+
         return True
 
     async def game_watcher(self, ctx: "BizHawkClientContext") -> None:
         try:
+
             values = await bizhawk.read(
                 ctx.bizhawk_ctx,
                 [
@@ -186,6 +192,18 @@ class MarioLandClient(BizHawkClient):
             secret_area_value = values[3][0]
             world_4_secret_value = values[4][0]
 
+            #Assign power up values
+            powerup_values = await bizhawk.read(
+                ctx.bizhawk_ctx,
+                [
+                    (0x19, 1, "HRAM"),  # FF99 - Powerup Status
+                    (0x35, 1, "HRAM"),  # FFB5 - Has Superball
+                ],
+            )
+ 
+            powerup_status = powerup_values[0][0]
+            has_superball = powerup_values[1][0]
+
 
             current_level = get_level_from_values(
                 world_level,
@@ -193,6 +211,46 @@ class MarioLandClient(BizHawkClient):
             )
 
 
+            # ---------------------------------------------------------
+            # Power-up enforcement
+            # ---------------------------------------------------------
+            if ctx.slot_data and ctx.slot_data.get("power_up_setting"):
+                power_up_level = getattr(ctx, "power_up_level", 0)
+                star_unlocked = getattr(ctx, "star_unlocked", False)
+ 
+                power_up_writes = []
+ 
+                # Block growing into "big" entirely until the first
+                # Progressive PowerUp has been received.
+                if power_up_level < 1 and powerup_status in (0x01, 0x02):
+                    power_up_writes.append((0x19, [0x03], "HRAM"))
+ 
+                # "Big" is allowed once unlocked, but strip the
+                # Superball flag until the second Progressive
+                # PowerUp has been received.
+                if power_up_level < 2 and has_superball != 0x00:
+                    power_up_writes.append((0x35, [0x00], "HRAM"))
+ 
+                if power_up_writes:
+                    await bizhawk.write(ctx.bizhawk_ctx, power_up_writes)
+ 
+                # Cancel Star invincibility if it hasn't been
+                # unlocked yet.
+                if not star_unlocked:
+                    starman_values = await bizhawk.read(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0xD3, 1, "WRAM"),  # C0D3 - Starman Timer
+                        ],
+                    )
+ 
+                    if starman_values[0][0] != 0x00:
+                        await bizhawk.write(
+                            ctx.bizhawk_ctx,
+                            [
+                                (0xD3, [0x01], "WRAM"),
+                            ],
+                        )
 
 
 
@@ -301,6 +359,15 @@ class MarioLandClient(BizHawkClient):
             # Level Select
             # ---------------------------------------------------------
             if game_state == 15:
+
+                await bizhawk.write(
+                    ctx.bizhawk_ctx,
+                    [
+                        (0x35, [0], "HRAM"),
+                        (0x00D7, [5], "WRAM"),
+                    ],
+                )
+
                 # Freeze the game while we check/fix the selected level.
                 await bizhawk.lock(ctx.bizhawk_ctx)
 
@@ -312,6 +379,10 @@ class MarioLandClient(BizHawkClient):
                             (0x1A, [2], "HRAM"),
                         ],
                     )
+
+                    #Reset starting lives
+                    ctx.starting_lives_set = False
+ 
 
                     # Read the selection again while the game is frozen
                     select_values = await bizhawk.read(
@@ -368,6 +439,45 @@ class MarioLandClient(BizHawkClient):
                     ],
                 )
 
+                # ---------------------------------------------------------
+                # Starting lives
+                # ---------------------------------------------------------
+                if not getattr(ctx, "starting_lives_set", False):
+                    starting_lives = 2
+    
+                    if ctx.slot_data is not None:
+                        starting_lives = ctx.slot_data.get(
+                            "starting_lives",
+                            starting_lives
+                        )
+                        
+                    # On-screen two-digit lives counter (tens/ones tiles),
+                    # same layout as the coin counter.
+                    lives_tens = starting_lives // 10
+                    lives_ones = starting_lives % 10
+                    lives_bcd = (lives_tens << 4) | lives_ones
+    
+                    # Underlying lives value used by the game's logic.
+                    await bizhawk.write(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1A15, [lives_bcd], "WRAM"),
+                        ],
+                    )
+    
+    
+                    await bizhawk.write(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1806, [lives_tens], "VRAM"),  # Tens
+                            (0x1807, [lives_ones], "VRAM"),  # Ones
+                        ],
+                    )
+    
+                    ctx.starting_lives_set = True
+    
+                    print(f"Set starting lives to {starting_lives}")
+
 
             # ---------------------------------------------------------
             # Find current level
@@ -397,7 +507,6 @@ class MarioLandClient(BizHawkClient):
                             (0x33, [1], "HRAM"),  # FFB3 = Game State 1 (dead)
                         ],
                     )
-
 
 
         except bizhawk.RequestFailedError:
@@ -505,6 +614,23 @@ class MarioLandClient(BizHawkClient):
                         f"Unlocked levels: "
                         f"{sorted(ctx.unlocked_levels)}"
                     )
+
+            if item_name == "Progressive Power Up":
+                ctx.power_up_level = getattr(ctx, "power_up_level", 0) + 1
+ 
+                print(
+                    f"Power-up level increased to {ctx.power_up_level}"
+                )
+ 
+                continue
+ 
+            if item_name == "Star":
+                ctx.star_unlocked = True
+ 
+                print("Star unlocked")
+ 
+                continue
+
 
             if item_name == "Coin":
                 ctx.coins_to_add = getattr(ctx, "coins_to_add", 0) + 1

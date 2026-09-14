@@ -3,6 +3,9 @@ from BaseClasses import Item, ItemClassification
 ITEM_NAME_TO_ID = {
     "Coin" : 1,
 
+    "Progressive Power Up": 2,
+    "Star": 3,
+
     "World 1-2": 12,
     "World 1-3": 13,
 
@@ -31,6 +34,9 @@ class MarioLandItem(Item) :
 
 ITEM_CLASSIFICATIONS = {
     "Coin": ItemClassification.filler,
+
+    "Progressive Power Up": ItemClassification.useful,
+    "Star": ItemClassification.useful,
 
     "World 1-2": ItemClassification.progression,
     "World 1-3": ItemClassification.progression,

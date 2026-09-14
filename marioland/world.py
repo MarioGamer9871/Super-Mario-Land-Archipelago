@@ -10,6 +10,7 @@ from .items import (
     create_item as create_mario_land_item,
 )
 from .locations import MarioLandLocation, LOCATION_NAME_TO_ID
+from .options import MarioLandOptions
 from .regions import LEVELS, ITEMLEVELS, create_regions
 from .rules import set_rules
 from rule_builder.rules import CanReachLocation
@@ -84,6 +85,9 @@ class MarioLandWorld(World):
 
     topology_present = True
 
+    options_dataclass = MarioLandOptions
+    options: MarioLandOptions
+    
     item_name_to_id = ITEM_NAME_TO_ID
     location_name_to_id = LOCATION_NAME_TO_ID
 
@@ -137,6 +141,18 @@ class MarioLandWorld(World):
                     self.create_item(name)
                 )
 
+        # Power-up randomization
+        if self.options.power_up_setting:
+            self.multiworld.itempool.append(
+                self.create_item("Progressive Power Up")
+            )
+            self.multiworld.itempool.append(
+                self.create_item("Progressive Power Up")
+            )
+            self.multiworld.itempool.append(
+                self.create_item("Star")
+            )
+ 
         # Fill remaining locations with filler items
         remaining = len(LOCATION_NAME_TO_ID) - len(self.multiworld.itempool)
 
@@ -167,4 +183,8 @@ class MarioLandWorld(World):
         )
 
     def fill_slot_data(self) -> Dict:
-        return {}
+        return {
+            "starting_lives": self.options.starting_lives.value,
+            "power_up_setting": bool(self.options.power_up_setting.value),
+        }
+ 
