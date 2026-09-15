@@ -13,7 +13,6 @@ from .locations import MarioLandLocation, LOCATION_NAME_TO_ID
 from .options import MarioLandOptions
 from .regions import LEVELS, ITEMLEVELS, create_regions
 from .rules import set_rules
-from rule_builder.rules import CanReachLocation
 
 
 #Reigon Logic
@@ -134,6 +133,8 @@ class MarioLandWorld(World):
 
     #Compile and Create Items
     def create_items(self):
+        pool = []
+        
         # Progression items
         for name in ITEM_NAME_TO_ID:
             if name.startswith("World "):
@@ -152,16 +153,17 @@ class MarioLandWorld(World):
             self.multiworld.itempool.append(
                 self.create_item("Star")
             )
+
  
         # Fill remaining locations with filler items
-        remaining = len(LOCATION_NAME_TO_ID) - len(self.multiworld.itempool)
-
+        remaining = len(LOCATION_NAME_TO_ID) - len(pool)
+ 
         for i in range(remaining):
             filler_name = FILLER_ITEMS[i % len(FILLER_ITEMS)]
-
-            self.multiworld.itempool.append(
-                self.create_item(filler_name)
-            )
+ 
+            pool.append(self.create_item(filler_name))
+ 
+        self.multiworld.itempool += pool
 
 
 
