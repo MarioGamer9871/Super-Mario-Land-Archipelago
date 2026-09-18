@@ -32,3 +32,15 @@ def set_rules(world):
         )
 
 
+    if world.options.power_up_setting:
+        for location_name in [
+            "1-3 Secret Area 2",
+            "3-2 Secret Area 1",
+        ]:
+            location = world.get_location(location_name)
+ 
+            set_rule(
+                location,
+                lambda state:
+                    state.has("Progressive Power Up", world.player)
+            )

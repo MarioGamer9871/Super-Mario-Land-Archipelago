@@ -35,7 +35,7 @@ class MarioLandItem(Item) :
 ITEM_CLASSIFICATIONS = {
     "Coin": ItemClassification.filler,
 
-    "Progressive Power Up": ItemClassification.useful,
+    "Progressive Power Up": ItemClassification.progression,
     "Star": ItemClassification.useful,
 
     "World 1-2": ItemClassification.progression,
