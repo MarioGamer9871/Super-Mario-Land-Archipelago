@@ -6,6 +6,9 @@ ITEM_NAME_TO_ID = {
     "Progressive Power Up": 2,
     "Star": 3,
 
+    "Marine Pop": 4,
+    "Sky Pop": 5,
+
     "World 1-2": 12,
     "World 1-3": 13,
 
@@ -37,6 +40,9 @@ ITEM_CLASSIFICATIONS = {
 
     "Progressive Power Up": ItemClassification.progression,
     "Star": ItemClassification.useful,
+
+    "Marine Pop": ItemClassification.progression,
+    "Sky Pop": ItemClassification.progression,
 
     "World 1-2": ItemClassification.progression,
     "World 1-3": ItemClassification.progression,

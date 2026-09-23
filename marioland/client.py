@@ -170,6 +170,9 @@ class MarioLandClient(BizHawkClient):
         ctx.power_up_level = 0
         ctx.star_unlocked = False 
 
+        ctx.has_marine_pop = False
+        ctx.has_sky_pop = False
+
         return True
 
     async def game_watcher(self, ctx: "BizHawkClientContext") -> None:
@@ -209,6 +212,34 @@ class MarioLandClient(BizHawkClient):
                 world_level,
                 level_index
             )
+
+            # ---------------------------------------------------------
+            # Vehicle enforcement
+            # ---------------------------------------------------------
+            if ctx.slot_data and ctx.slot_data.get("vehicle_setting"):
+                if game_state == 13:
+                    blocked = False
+
+                    if current_level == "2-3" and not getattr(
+                        ctx, "has_marine_pop", False
+                    ):
+                        blocked = True
+                        print("Blocked Marine Pop entry (not unlocked)")
+
+                    elif current_level == "4-3" and not getattr(
+                        ctx, "has_sky_pop", False
+                    ):
+                        blocked = True
+                        print("Blocked Sky Pop entry (not unlocked)")
+
+                    if blocked:
+                        await bizhawk.write(
+                            ctx.bizhawk_ctx,
+                            [
+                                (0x33, [0], "HRAM"),  # FFB3 - Game State
+                                (0x1A15, [0], "WRAM"), # Lives to 0
+                            ],
+                        )
 
 
             # ---------------------------------------------------------
@@ -629,6 +660,22 @@ class MarioLandClient(BizHawkClient):
  
                 print("Star unlocked")
  
+                continue
+
+            if item_name == "Marine Pop":
+                ctx.has_marine_pop = True
+
+                print("Marine Pop unlocked")
+
+                continue
+
+
+
+            if item_name == "Sky Pop":
+                ctx.has_sky_pop = True
+
+                print("Sky Pop unlocked")
+
                 continue
 
 

@@ -154,6 +154,16 @@ class MarioLandWorld(World):
                 self.create_item("Star")
             )
 
+        # Vehicle randomization
+        if self.options.vehicle_setting:
+            self.multiworld.itempool.append(
+                self.create_item("Marine Pop")
+            )
+            self.multiworld.itempool.append(
+                self.create_item("Sky Pop")
+            )
+
+
  
         # Fill remaining locations with filler items
         remaining = len(LOCATION_NAME_TO_ID) - len(pool)
@@ -188,5 +198,6 @@ class MarioLandWorld(World):
         return {
             "starting_lives": self.options.starting_lives.value,
             "power_up_setting": bool(self.options.power_up_setting.value),
+            "vehicle_setting": bool(self.options.vehicle_setting.value),
         }
  

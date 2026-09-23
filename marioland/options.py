@@ -24,8 +24,14 @@ class PowerUpSetting(Toggle):
     """
     display_name = "Randomize Power Ups?"
 
+class VehicleSetting(Toggle):
+    """
+    Choose whether to add the vehicles in 2-3 and 4-3 into the item pool:
+    """
+    display_name = "Randomize Vehicles?"
+
 @dataclass
 class MarioLandOptions(PerGameCommonOptions):
     starting_lives: StartingLives
     power_up_setting: PowerUpSetting
-
+    vehicle_setting: VehicleSetting

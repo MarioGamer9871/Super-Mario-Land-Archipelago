@@ -44,3 +44,28 @@ def set_rules(world):
                 lambda state:
                     state.has("Progressive Power Up", world.player)
             )
+
+    if world.options.vehicle_setting:
+        for location_name in [
+            "2-3 Clear",
+        ]:
+            location = world.get_location(location_name)
+ 
+            set_rule(
+                location,
+                lambda state:
+                    state.has("Marine Pop", world.player)
+            )
+
+
+    if world.options.vehicle_setting:
+        for location_name in [
+            "4-3 Clear",
+        ]:
+            location = world.get_location(location_name)
+ 
+            set_rule(
+                location,
+                lambda state:
+                    state.has("Sky Pop", world.player)
+            )
