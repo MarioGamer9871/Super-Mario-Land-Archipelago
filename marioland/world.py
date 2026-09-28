@@ -138,28 +138,28 @@ class MarioLandWorld(World):
         # Progression items
         for name in ITEM_NAME_TO_ID:
             if name.startswith("World "):
-                self.multiworld.itempool.append(
+                pool.append(
                     self.create_item(name)
                 )
 
         # Power-up randomization
         if self.options.power_up_setting:
-            self.multiworld.itempool.append(
+            pool.append(
                 self.create_item("Progressive Power Up")
             )
-            self.multiworld.itempool.append(
+            pool.append(
                 self.create_item("Progressive Power Up")
             )
-            self.multiworld.itempool.append(
+            pool.append(
                 self.create_item("Star")
             )
 
         # Vehicle randomization
         if self.options.vehicle_setting:
-            self.multiworld.itempool.append(
+            pool.append(
                 self.create_item("Marine Pop")
             )
-            self.multiworld.itempool.append(
+            pool.append(
                 self.create_item("Sky Pop")
             )
 
