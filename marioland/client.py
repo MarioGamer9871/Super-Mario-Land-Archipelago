@@ -90,6 +90,41 @@ WORLD_4_SECRET_AREAS = {
     },
 }
 
+#Bonus Game Checks
+BONUS_LEVELS = {
+    "1-1": {
+        ("1-1 Bonus Game", 101),
+    },
+
+    "1-2": {
+        ("1-2 Bonus Game", 102),
+    },
+
+    "2-1": {
+        ("2-1 Bonus Game", 201),
+    },
+
+    "2-2": {
+        ("2-2 Bonus Game", 202),
+    },
+
+    "3-1": {
+        ("3-1 Bonus Game", 301),
+    },
+
+    "3-2": {
+        ("3-2 Bonus Game", 302),
+    },
+
+    "4-1": {
+        ("4-1 Bonus Game", 401),
+    },
+
+    "4-2": {
+        ("4-2 Bonus Game", 402),
+    },
+}
+
 #Find unlocked levels
 def get_next_unlocked_level(ctx, current_level):
     if current_level not in LEVEL_VALUES:
@@ -331,7 +366,6 @@ class MarioLandClient(BizHawkClient):
 
 
 
-
             # ---------------------------------------------------------
             # Level completion
             # ---------------------------------------------------------
@@ -358,6 +392,33 @@ class MarioLandClient(BizHawkClient):
 
             elif game_state != 6:
                 ctx.completion_handled = False
+
+
+            if game_state == 26 and current_level is not None:
+                if ctx.slot_data and ctx.slot_data.get("bonus_game_checks"):
+                    if not getattr(ctx, "bonus_handled", False):
+                        ctx.bonus_handled = True
+
+                        print(f"Completed bonus game: {current_level}")
+
+                        # Location IDs are 101, 102, 201, 202, etc.
+                        location_id = int(current_level.replace("-", "0"))
+
+                        if location_id not in ctx.locations_checked:
+                            ctx.locations_checked.add(location_id)
+                            await ctx.send_msgs([
+                                {
+                                    "cmd": "LocationChecks",
+                                    "locations": [location_id],
+                                }
+                            ])
+
+                            print(f"Sent location check: {location_id}")
+
+            elif game_state != 26:
+                ctx.bonus_handled = False
+    
+            
 
 
 

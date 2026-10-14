@@ -20,18 +20,26 @@ class StartingLives(Range):
 
 class PowerUpSetting(Toggle):
     """
-    Choose whether to add power up unlocks into the item pool:
+    Adds power up unlocks into the item pool:
     """
     display_name = "Randomize Power Ups?"
 
 class VehicleSetting(Toggle):
     """
-    Choose whether to add the vehicles in 2-3 and 4-3 into the item pool:
+    Adds the vehicles in 2-3 and 4-3 into the item pool
     """
     display_name = "Randomize Vehicles?"
+
+class BonusGameChecks(Toggle):
+    """
+    Adds each end of level bonus game as a location
+    """
+    display_name = "Bonus Game Checks?"
+
 
 @dataclass
 class MarioLandOptions(PerGameCommonOptions):
     starting_lives: StartingLives
     power_up_setting: PowerUpSetting
     vehicle_setting: VehicleSetting
+    bonus_game_checks: BonusGameChecks

@@ -10,8 +10,9 @@ from .items import (
     create_item as create_mario_land_item,
 )
 from .locations import MarioLandLocation, LOCATION_NAME_TO_ID
+from .locations import MarioLandLocation, BONUS_LOCATION_TO_ID
 from .options import MarioLandOptions
-from .regions import LEVELS, ITEMLEVELS, create_regions
+from .regions import LEVELS, BONUS_LEVELS, create_regions
 from .rules import set_rules
 
 
@@ -73,6 +74,33 @@ LEVEL_LOCATIONS = {
     ],
 }
 
+#Bonus Game Checks
+BONUS_LOCATIONS = {
+    "1-1": [
+        "1-1 Bonus Game",
+    ],
+    "1-2": [
+        "1-2 Bonus Game",
+    ],
+    "2-1": [
+        "2-1 Bonus Game",
+    ],
+    "2-2": [
+        "2-2 Bonus Game",
+    ],
+    "3-1": [
+        "3-1 Bonus Game",
+    ],
+    "3-2": [
+        "3-2 Bonus Game",
+    ],
+    "4-1": [
+        "4-1 Bonus Game",
+    ],
+    "4-2": [
+        "4-2 Bonus Game",
+    ],
+}
 
 
 class MarioLandWorld(World):
@@ -89,6 +117,8 @@ class MarioLandWorld(World):
     
     item_name_to_id = ITEM_NAME_TO_ID
     location_name_to_id = LOCATION_NAME_TO_ID
+
+    LOCATION_NAME_TO_ID.update(BONUS_LOCATION_TO_ID)
 
     item_name_groups = {
         "Worlds": {
@@ -130,6 +160,22 @@ class MarioLandWorld(World):
                     )
                 )
 
+        if self.options.bonus_game_checks:
+            for level in BONUS_LEVELS:
+                region = self.multiworld.get_region(level, self.player)
+
+                for location_name in BONUS_LOCATIONS[level]:
+                    location_id = BONUS_LOCATION_TO_ID[location_name]
+
+                    region.locations.append(
+                        MarioLandLocation(
+                            self.player,
+                            location_name,
+                            location_id,
+                            region
+                        )
+                    )
+
 
     #Compile and Create Items
     def create_items(self):
@@ -164,9 +210,13 @@ class MarioLandWorld(World):
             )
 
 
- 
+        if self.options.bonus_game_checks:
+            total_locations = len(LOCATION_NAME_TO_ID) + len(BONUS_LOCATION_TO_ID)
+        else:
+            total_locations = len(LOCATION_NAME_TO_ID)
+
         # Fill remaining locations with filler items
-        remaining = len(LOCATION_NAME_TO_ID) - len(pool)
+        remaining = total_locations - len(pool)
  
         for i in range(remaining):
             filler_name = FILLER_ITEMS[i % len(FILLER_ITEMS)]
@@ -199,5 +249,6 @@ class MarioLandWorld(World):
             "starting_lives": self.options.starting_lives.value,
             "power_up_setting": bool(self.options.power_up_setting.value),
             "vehicle_setting": bool(self.options.vehicle_setting.value),
+            "bonus_game_checks": bool(self.options.bonus_game_checks.value),
         }
  

@@ -42,5 +42,20 @@ LOCATION_NAME_TO_ID = {
     "4-2 Secret Area 2": 422,
 }
 
+BONUS_LOCATION_TO_ID = {
+    #Bonus Games
+    "1-1 Bonus Game": 101,
+    "1-2 Bonus Game": 102,
+
+    "2-1 Bonus Game": 201,
+    "2-2 Bonus Game": 202,
+
+    "3-1 Bonus Game": 301,
+    "3-2 Bonus Game": 302,
+
+    "4-1 Bonus Game": 401,
+    "4-2 Bonus Game": 402,
+}
+
 class MarioLandLocation(Location):
     game = "Super Mario Land"
