@@ -46,12 +46,15 @@ BONUS_LOCATION_TO_ID = {
     #Bonus Games
     "1-1 Bonus Game": 101,
     "1-2 Bonus Game": 102,
+    "1-3 Bonus Game": 103,
 
     "2-1 Bonus Game": 201,
     "2-2 Bonus Game": 202,
+    "2-3 Bonus Game": 203,
 
     "3-1 Bonus Game": 301,
     "3-2 Bonus Game": 302,
+    "3-3 Bonus Game": 303,
 
     "4-1 Bonus Game": 401,
     "4-2 Bonus Game": 402,

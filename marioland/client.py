@@ -7,6 +7,10 @@ if TYPE_CHECKING:
     from worlds._bizhawk.context import BizHawkClientContext
 
 
+VMajor = 0
+VMinor = 4
+VPatch = 1
+
 LEVELS = [
     "1-1",
     "1-2",
@@ -448,6 +452,43 @@ class MarioLandClient(BizHawkClient):
             ctx.level_select_initialized = False
 
             # ---------------------------------------------------------
+            # AP Logo on title screen
+            # ---------------------------------------------------------
+            if game_state == 15:
+
+                await bizhawk.write(
+                    ctx.bizhawk_ctx,
+                    [
+                        (0x1924, [10], "VRAM"), #A
+                        (0x1925, [27], "VRAM"), #R
+                        (0x1926, [12], "VRAM"), #C
+                        (0x1927, [17], "VRAM"), #H
+                        (0x1928, [18], "VRAM"), #I
+                        (0x1929, [25], "VRAM"), #P
+                        (0x192A, [14], "VRAM"), #E
+                        (0x192B, [21], "VRAM"), #L
+                        (0x192C, [10], "VRAM"), #A
+                        (0x192D, [16], "VRAM"), #G
+                        (0x192E, [24], "VRAM"), #O
+                        (0x192F, [227], "VRAM"),#Logo
+
+
+                        (0x1A05, [44], "VRAM"), #
+                        (0x1A06, [10], "VRAM"), #A
+                        (0x1A07, [25], "VRAM"), #P
+                        (0x1A08, [44], "VRAM"), #
+
+                        (0x1A0A, [31], "VRAM"), #V
+                        (0x1A0B, [VMajor], "VRAM"), # Major Version
+                        (0x1A0C, [35], "VRAM"), #.
+                        (0x1A0D, [VMinor], "VRAM"), # Minor Version
+                        (0x1A0E, [35], "VRAM"), #.
+                        (0x1A0F, [VPatch], "VRAM"), # Patch Version
+                    ],
+                )
+
+
+            # ---------------------------------------------------------
             # Level Select
             # ---------------------------------------------------------
             if game_state == 15:
@@ -612,56 +653,57 @@ class MarioLandClient(BizHawkClient):
         # ---------------------------------------------------------
         coins_to_add = getattr(ctx, "coins_to_add", 0)
 
-        if coins_to_add > 0:
+        if game_state != 15:
+            if coins_to_add > 0:
 
-            values = await bizhawk.read(
-                ctx.bizhawk_ctx,
-                [
-                    (0x7A, 1, "HRAM"),  # FFFA - Coins
-                ],
-            )
+                values = await bizhawk.read(
+                    ctx.bizhawk_ctx,
+                    [
+                        (0x7A, 1, "HRAM"),  # FFFA - Coins
+                    ],
+                )
 
-            coins_bcd = values[0][0]
+                coins_bcd = values[0][0]
 
-            # BCD -> decimal
-            coins = ((coins_bcd >> 4) * 10) + (coins_bcd & 0x0F)
+                # BCD -> decimal
+                coins = ((coins_bcd >> 4) * 10) + (coins_bcd & 0x0F)
 
-            # Add received coins
-            coins += coins_to_add
+                # Add received coins
+                coins += coins_to_add
 
-            # Maximum coin count
-            if coins > 99:
-                coins = 99
+                # Maximum coin count
+                if coins > 99:
+                    coins = 99
 
-            # Decimal -> BCD
-            new_coins_bcd = ((coins // 10) << 4) | (coins % 10)
+                # Decimal -> BCD
+                new_coins_bcd = ((coins // 10) << 4) | (coins % 10)
 
-            # Update actual coin count
-            await bizhawk.write(
-                ctx.bizhawk_ctx,
-                [
-                    (0x7A, [new_coins_bcd], "HRAM"),
-                ],
-            )
+                # Update actual coin count
+                await bizhawk.write(
+                    ctx.bizhawk_ctx,
+                    [
+                        (0x7A, [new_coins_bcd], "HRAM"),
+                    ],
+                )
 
-            # Update visual coin count
-            tens = coins // 10
-            ones = coins % 10
+                # Update visual coin count
+                tens = coins // 10
+                ones = coins % 10
 
-            await bizhawk.write(
-                ctx.bizhawk_ctx,
-                [
-                    (0x1829, [tens], "VRAM"),  # Tens
-                    (0x182A, [ones], "VRAM"),  # Ones
-                ],
-            )
+                await bizhawk.write(
+                    ctx.bizhawk_ctx,
+                    [
+                        (0x1829, [tens], "VRAM"),  # Tens
+                        (0x182A, [ones], "VRAM"),  # Ones
+                    ],
+                )
 
-            print(
-                f"Added {coins_to_add} coin(s)! "
-                f"Total: {coins}"
-            )
+                print(
+                    f"Added {coins_to_add} coin(s)! "
+                    f"Total: {coins}"
+                )
 
-            ctx.coins_to_add = 0
+                ctx.coins_to_add = 0
 
 
         

@@ -82,18 +82,30 @@ BONUS_LOCATIONS = {
     "1-2": [
         "1-2 Bonus Game",
     ],
+    "1-3": [
+        "1-3 Bonus Game",
+    ],
+
     "2-1": [
         "2-1 Bonus Game",
     ],
     "2-2": [
         "2-2 Bonus Game",
     ],
+    "2-3": [
+        "2-3 Bonus Game",
+    ],
+
     "3-1": [
         "3-1 Bonus Game",
     ],
     "3-2": [
         "3-2 Bonus Game",
     ],
+    "3-3": [
+        "3-3 Bonus Game",
+    ],
+    
     "4-1": [
         "4-1 Bonus Game",
     ],
