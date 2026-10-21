@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 
 
 VMajor = 0
-VMinor = 4
-VPatch = 1
+VMinor = 5
+VPatch = 0
 
 LEVELS = [
     "1-1",
@@ -26,7 +26,6 @@ LEVELS = [
     "4-3",
 ]
 
-
 LEVEL_VALUES = {
     "1-1": (0x11, 0),
     "1-2": (0x12, 1),
@@ -41,7 +40,6 @@ LEVEL_VALUES = {
     "4-2": (0x42, 10),
     "4-3": (0x43, 11),
 }
-
 
 #Secret Area Values W1-W3 (0x74)
 SECRET_AREAS = {
@@ -129,6 +127,38 @@ BONUS_LEVELS = {
     },
 }
 
+#1UP Checks
+HEART_LEVELS = {
+    "1-1": {
+        ("1-1 1UP Heart", 2111),
+    },
+    "1-2": {
+        ("1-2 1UP Heart 1", 2121),
+        ("1-2 1UP Heart 2", 2122),
+    },
+    "1-3": {
+        ("1-3 1UP Heart", 2131),
+    },
+    "2-1": {
+        ("2-1 1UP Heart", 2211),
+    },
+    "2-3": {
+        ("2-3 1UP Heart", 2231),
+    },
+    "3-1": {
+        ("3-1 1UP Heart", 2311),
+    },
+    "3-3": {
+        ("3-3 1UP Heart", 2331),
+    },
+    "4-1": {
+        ("4-1 1UP Heart", 2411),
+    },
+    "4-3": {
+        ("4-3 1UP Heart", 2431),
+    },
+}
+
 #Find unlocked levels
 def get_next_unlocked_level(ctx, current_level):
     if current_level not in LEVEL_VALUES:
@@ -146,8 +176,6 @@ def get_next_unlocked_level(ctx, current_level):
 
     return None
 
-
-
 def get_previous_level(level: str):
     """Return the level immediately before the given level."""
     index = LEVEL_VALUES[level][1]
@@ -161,7 +189,6 @@ def get_previous_level(level: str):
 
     return None
 
-
 def get_level_from_values(world_level: int, level_index: int):
     """Convert FFB4/FFE4 values into a level name."""
     for level, (world_value, index_value) in LEVEL_VALUES.items():
@@ -170,7 +197,7 @@ def get_level_from_values(world_level: int, level_index: int):
 
     return None
 
-
+#Full Client Loop
 class MarioLandClient(BizHawkClient):
     game = "Super Mario Land"
     system = "GB"
@@ -182,7 +209,6 @@ class MarioLandClient(BizHawkClient):
             if system != "GB":
                 return False
 
-
             rom_hash = await bizhawk.get_hash(ctx.bizhawk_ctx)
 
             valid_hashes = {
@@ -192,7 +218,6 @@ class MarioLandClient(BizHawkClient):
 
             if rom_hash.lower() not in valid_hashes:
                 return False
-
 
         except bizhawk.RequestFailedError:
             return False
@@ -216,7 +241,6 @@ class MarioLandClient(BizHawkClient):
 
     async def game_watcher(self, ctx: "BizHawkClientContext") -> None:
         try:
-
             values = await bizhawk.read(
                 ctx.bizhawk_ctx,
                 [
@@ -225,6 +249,8 @@ class MarioLandClient(BizHawkClient):
                     (0x64, 1, "HRAM"),  # FFE4 - Level Index
                     (0x74, 1, "HRAM"),  # Secret area value
                     (0x75, 1, "HRAM"),  # World 4 secret area value
+                    (0x1FFF, 1, "WRAM"), # 1UP Value
+                    (0x00AB, 1, "WRAM"), # Level Progress
                 ],
             )
 
@@ -233,6 +259,8 @@ class MarioLandClient(BizHawkClient):
             level_index = values[2][0]
             secret_area_value = values[3][0]
             world_4_secret_value = values[4][0]
+            heart_value = values[5][0]
+            level_progress = values[6][0]
 
             #Assign power up values
             powerup_values = await bizhawk.read(
@@ -245,7 +273,6 @@ class MarioLandClient(BizHawkClient):
  
             powerup_status = powerup_values[0][0]
             has_superball = powerup_values[1][0]
-
 
             current_level = get_level_from_values(
                 world_level,
@@ -279,7 +306,6 @@ class MarioLandClient(BizHawkClient):
                                 (0x1A15, [0], "WRAM"), # Lives to 0
                             ],
                         )
-
 
             # ---------------------------------------------------------
             # Power-up enforcement
@@ -322,12 +348,9 @@ class MarioLandClient(BizHawkClient):
                             ],
                         )
 
-
-
             # ---------------------------------------------------------
             # Secret Area Checks
             # ---------------------------------------------------------
-
             secret_location = None
             secret_location_id = None
 
@@ -347,12 +370,8 @@ class MarioLandClient(BizHawkClient):
                 if area is not None:
                     secret_location, secret_location_id = area
 
-
             if secret_location_id is not None:
                 if secret_location_id not in ctx.locations_checked:
-                    print(
-                        f"Entered secret area: {secret_location}"
-                    )
 
                     ctx.locations_checked.add(secret_location_id)
 
@@ -363,12 +382,60 @@ class MarioLandClient(BizHawkClient):
                         }
                     ])
 
-                    print(
-                        f"Sent secret area location check: "
-                        f"{secret_location_id}"
+            # ---------------------------------------------------------
+            # Heart/1UP Checks
+            # ---------------------------------------------------------
+            if ctx.slot_data and ctx.slot_data.get("heartsanity"):
+
+                heart_location = None
+                heart_location_id = None
+
+                if heart_value == 1:
+                    if current_level in HEART_LEVELS and current_level != "1-2":
+                        heart_location_id = list(HEART_LEVELS[current_level])[0][1] 
+
+                        if heart_location_id not in ctx.locations_checked:
+                            ctx.locations_checked.add(heart_location_id)
+
+                            await ctx.send_msgs([
+                                {
+                                    "cmd": "LocationChecks",
+                                    "locations": [heart_location_id],
+                                }
+                            ])
+
+                    if current_level == "1-2":
+                        if level_progress < 80:
+                            heart_location_id = 2121
+
+                            if heart_location_id not in ctx.locations_checked:
+                                ctx.locations_checked.add(heart_location_id)
+
+                                await ctx.send_msgs([
+                                    {
+                                        "cmd": "LocationChecks",
+                                        "locations": [heart_location_id],
+                                    }
+                                ])
+                        if level_progress > 80:
+                            heart_location_id = 2122
+
+                            if heart_location_id not in ctx.locations_checked:
+                                ctx.locations_checked.add(heart_location_id)
+
+                                await ctx.send_msgs([
+                                    {
+                                        "cmd": "LocationChecks",
+                                        "locations": [heart_location_id],
+                                    }
+                                ])
+
+                    await bizhawk.write(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1FFF, [0], "WRAM"),
+                        ],
                     )
-
-
 
             # ---------------------------------------------------------
             # Level completion
@@ -397,7 +464,6 @@ class MarioLandClient(BizHawkClient):
             elif game_state != 6:
                 ctx.completion_handled = False
 
-
             if game_state == 26 and current_level is not None:
                 if ctx.slot_data and ctx.slot_data.get("bonus_game_checks"):
                     if not getattr(ctx, "bonus_handled", False):
@@ -422,10 +488,6 @@ class MarioLandClient(BizHawkClient):
             elif game_state != 26:
                 ctx.bonus_handled = False
     
-            
-
-
-
             # ---------------------------------------------------------
             # Game completion
             # ---------------------------------------------------------
@@ -445,9 +507,6 @@ class MarioLandClient(BizHawkClient):
 
             elif game_state != 44:
                 ctx.goal_sent = False
-
-
-
 
             ctx.level_select_initialized = False
 
@@ -487,7 +546,6 @@ class MarioLandClient(BizHawkClient):
                     ],
                 )
 
-
             # ---------------------------------------------------------
             # Level Select
             # ---------------------------------------------------------
@@ -516,7 +574,6 @@ class MarioLandClient(BizHawkClient):
                     #Reset starting lives
                     ctx.starting_lives_set = False
  
-
                     # Read the selection again while the game is frozen
                     select_values = await bizhawk.read(
                         ctx.bizhawk_ctx,
@@ -583,7 +640,7 @@ class MarioLandClient(BizHawkClient):
                             "starting_lives",
                             starting_lives
                         )
-                        
+
                     # On-screen two-digit lives counter (tens/ones tiles),
                     # same layout as the coin counter.
                     lives_tens = starting_lives // 10
@@ -611,7 +668,6 @@ class MarioLandClient(BizHawkClient):
     
                     print(f"Set starting lives to {starting_lives}")
 
-
             # ---------------------------------------------------------
             # Find current level
             # ---------------------------------------------------------
@@ -621,8 +677,6 @@ class MarioLandClient(BizHawkClient):
                 if world_level == world_value and level_index == index_value:
                     current_level = level
                     break
-
-
 
             # ---------------------------------------------------------
             # Locked level failsafe
@@ -641,18 +695,18 @@ class MarioLandClient(BizHawkClient):
                         ],
                     )
 
-
         except bizhawk.RequestFailedError:
             return
 
-
-
-
         # ---------------------------------------------------------
-        # Add received coins
+        # Add received coins and Lives
         # ---------------------------------------------------------
         coins_to_add = getattr(ctx, "coins_to_add", 0)
+        lives_to_add = getattr(ctx, "lives_to_add", 0)
 
+        #---------------------------------------------------------
+        # Add received coins   
+        #---------------------------------------------------------
         if game_state != 15:
             if coins_to_add > 0:
 
@@ -705,26 +759,65 @@ class MarioLandClient(BizHawkClient):
 
                 ctx.coins_to_add = 0
 
+            #---------------------------------------------------------
+            # Add received lives
+            #---------------------------------------------------------
+            if lives_to_add > 0:
+                if ctx.starting_lives_set == True:
+                    values = await bizhawk.read(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1A15, 1, "WRAM"),  # Lives
+                        ],
+                    )
 
-        
+                    lives_bcd = values[0][0]
+
+                    # BCD -> decimal
+                    lives = ((lives_bcd >> 4) * 10) + (lives_bcd & 0x0F)
+
+                    # Add received lives
+                    lives += lives_to_add
+
+                    # Maximum lives count
+                    if lives > 99:
+                        lives = 99
+
+                    # Decimal -> BCD
+                    new_lives_bcd = ((lives // 10) << 4) | (lives % 10)
+
+                    # Update actual lives count
+                    await bizhawk.write(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1A15, [new_lives_bcd], "WRAM"),
+                        ],
+                    )
+
+                    # Update visual lives count
+                    tens = lives // 10
+                    ones = lives % 10
+
+                    await bizhawk.write(
+                        ctx.bizhawk_ctx,
+                        [
+                            (0x1806, [tens], "VRAM"),  # Tens
+                            (0x1807, [ones], "VRAM"),  # Ones
+                        ],
+                    )
+
+                    print(
+                        f"Added {lives_to_add} life/lives! "
+                        f"Total: {lives}"
+                    )
+                    ctx.lives_to_add = 0
 
     def on_package(
-
-   
         self,
         ctx: "BizHawkClientContext",
         cmd: str,
         args: dict
     ) -> None:
-
-        #REMOVE
-        print(
-            f"PACKET: {cmd} | "
-            f"INDEX: {args.get('index', 'N/A')} | "
-            f"ITEMS: {len(args.get('items', []))}"
-        )
-        #REMOVE
-
 
         if cmd != "ReceivedItems":
             return
@@ -772,8 +865,6 @@ class MarioLandClient(BizHawkClient):
 
                 continue
 
-
-
             if item_name == "Sky Pop":
                 ctx.has_sky_pop = True
 
@@ -781,13 +872,9 @@ class MarioLandClient(BizHawkClient):
 
                 continue
 
-
             if item_name == "Coin":
                 ctx.coins_to_add = getattr(ctx, "coins_to_add", 0) + 1
 
-                print(
-                    f"Received Coin! "
-                    f"Coins waiting to add: {ctx.coins_to_add}"
-                )
-
+            if item_name == "1UP Heart":
+                ctx.lives_to_add = getattr(ctx, "lives_to_add", 0) + 1
                 continue

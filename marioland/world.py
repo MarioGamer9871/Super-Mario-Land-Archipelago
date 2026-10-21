@@ -9,10 +9,9 @@ from .items import (
     FILLER_ITEMS,
     create_item as create_mario_land_item,
 )
-from .locations import MarioLandLocation, LOCATION_NAME_TO_ID
-from .locations import MarioLandLocation, BONUS_LOCATION_TO_ID
+from .locations import MarioLandLocation, LOCATION_NAME_TO_ID, BONUS_LOCATION_TO_ID, HEART_LOCATION_ID
 from .options import MarioLandOptions
-from .regions import LEVELS, BONUS_LEVELS, create_regions
+from .regions import LEVELS, BONUS_LEVELS, HEART_LEVELS, create_regions
 from .rules import set_rules
 
 
@@ -114,6 +113,36 @@ BONUS_LOCATIONS = {
     ],
 }
 
+HEART_LOCATIONS = {
+    "1-1": [
+        "1-1 1UP Heart",
+    ],
+    "1-2": [
+        "1-2 1UP Heart 1",
+        "1-2 1UP Heart 2",
+    ],
+    "1-3": [
+        "1-3 1UP Heart",
+    ],
+    "2-1": [
+        "2-1 1UP Heart",
+    ],
+    "2-3": [
+        "2-3 1UP Heart",
+    ],
+    "3-1": [
+        "3-1 1UP Heart",
+    ],
+    "3-3": [
+        "3-3 1UP Heart",
+    ],
+    "4-1": [
+        "4-1 1UP Heart",
+    ],
+    "4-3": [
+        "4-3 1UP Heart",
+    ],
+}
 
 class MarioLandWorld(World):
     """
@@ -131,6 +160,7 @@ class MarioLandWorld(World):
     location_name_to_id = LOCATION_NAME_TO_ID
 
     LOCATION_NAME_TO_ID.update(BONUS_LOCATION_TO_ID)
+    LOCATION_NAME_TO_ID.update(HEART_LOCATION_ID)
 
     item_name_groups = {
         "Worlds": {
@@ -172,6 +202,7 @@ class MarioLandWorld(World):
                     )
                 )
 
+        #Create Bonus Game Checks
         if self.options.bonus_game_checks:
             for level in BONUS_LEVELS:
                 region = self.multiworld.get_region(level, self.player)
@@ -188,6 +219,22 @@ class MarioLandWorld(World):
                         )
                     )
 
+        #Create Heart Checks
+        if self.options.heartsanity:
+            for level in HEART_LEVELS:
+                region = self.multiworld.get_region(level, self.player)
+
+                for location_name in HEART_LOCATIONS[level]:
+                    location_id = HEART_LOCATION_ID[location_name]
+
+                    region.locations.append(
+                        MarioLandLocation(
+                            self.player,
+                            location_name,
+                            location_id,
+                            region
+                        )
+                    )
 
     #Compile and Create Items
     def create_items(self):
@@ -262,5 +309,6 @@ class MarioLandWorld(World):
             "power_up_setting": bool(self.options.power_up_setting.value),
             "vehicle_setting": bool(self.options.vehicle_setting.value),
             "bonus_game_checks": bool(self.options.bonus_game_checks.value),
+            "heartsanity": bool(self.options.heartsanity.value),
         }
  

@@ -60,5 +60,22 @@ BONUS_LOCATION_TO_ID = {
     "4-2 Bonus Game": 402,
 }
 
+HEART_LOCATION_ID = {
+    #Heartsanity Locations
+    "1-1 1UP Heart": 2111,
+    "1-2 1UP Heart 1": 2121,
+    "1-2 1UP Heart 2": 2122,
+    "1-3 1UP Heart": 2131,
+
+    "2-1 1UP Heart": 2211,
+    "2-3 1UP Heart": 2231,
+
+    "3-1 1UP Heart": 2311,
+    "3-3 1UP Heart": 2331,
+
+    "4-1 1UP Heart": 2411,
+    "4-3 1UP Heart": 2431,
+}
+
 class MarioLandLocation(Location):
     game = "Super Mario Land"

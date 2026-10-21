@@ -36,6 +36,21 @@ BONUS_LEVELS = [
     "4-2",
 ]
 
+HEART_LEVELS = [
+    "1-1",
+    "1-2",
+    "1-3",
+
+    "2-1",
+    "2-3",
+
+    "3-1",
+    "3-3",
+
+    "4-1",
+    "4-3", 
+]
+
 
 def create_regions(world):
     menu = Region("Menu", world.player, world.multiworld)

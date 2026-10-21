@@ -1,7 +1,8 @@
 from BaseClasses import Item, ItemClassification
 
 ITEM_NAME_TO_ID = {
-    "Coin" : 1,
+    "Coin": 1,
+    "1UP Heart": 10,
 
     "Progressive Power Up": 2,
     "Star": 3,
@@ -29,6 +30,7 @@ ITEM_NAME_TO_ID = {
 #List of ALL Filler Items
 FILLER_ITEMS = [
     "Coin",
+    "1UP Heart",
 ]
 
 
@@ -37,6 +39,7 @@ class MarioLandItem(Item) :
 
 ITEM_CLASSIFICATIONS = {
     "Coin": ItemClassification.filler,
+    "1UP Heart": ItemClassification.filler,
 
     "Progressive Power Up": ItemClassification.progression,
     "Star": ItemClassification.useful,
@@ -71,6 +74,7 @@ def create_item(world, name: str):
 def create_items(world) -> None:
     world.multiworld.itempool += [
         world.create.item("Coin"),
+        world.create.item("1UP Heart"),
 
         world.create.item("World 1-2"),
         world.create.item("World 1-3"),

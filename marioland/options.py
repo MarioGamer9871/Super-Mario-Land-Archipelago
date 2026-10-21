@@ -36,6 +36,12 @@ class BonusGameChecks(Toggle):
     """
     display_name = "Bonus Game Checks?"
 
+class Heartsanity(Toggle):
+    """
+    Adds each 1UP Heart as a location, NOTE: THIS REQUIRES AN EXTRA LUA SCRIPT IN ORDER TO WORK. SEE README FOR MORE INFO
+    """
+    display_name = "Heartsanity"
+
 
 @dataclass
 class MarioLandOptions(PerGameCommonOptions):
@@ -43,3 +49,4 @@ class MarioLandOptions(PerGameCommonOptions):
     power_up_setting: PowerUpSetting
     vehicle_setting: VehicleSetting
     bonus_game_checks: BonusGameChecks
+    heartsanity: Heartsanity
