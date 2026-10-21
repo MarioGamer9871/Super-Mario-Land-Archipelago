@@ -8,6 +8,6 @@ How to use:
 
 3. Open a "1.0" or "1.1 (Rev 1)" rom (Other versions may work but have not been tested) of Super Mario Land using the Bizhawk Emulator
 
-4. Drag and drop "connector_bizhawk_generic.lua" found in "archipelago/data/lua" onto the emulator window (NOTE: IF YOU ARE USING THE HEARTSANITY OPTION THEN YOU MUST ALSO DO THIS WITH THE "Heartsanity.lua" FILE THAT CAN BE DOWNLOADED HERE
+4. Drag and drop "connector_bizhawk_generic.lua" found in "archipelago/data/lua" onto the emulator window (NOTE: IF YOU ARE USING THE HEARTSANITY OPTION THEN YOU MUST ALSO DO THIS WITH THE "Heartsanity.lua" FILE THAT CAN BE DOWNLOADED HERE)
 
 5. Open the Archipelago Bizhawk Client and connect to a slot
