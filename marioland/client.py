@@ -8,8 +8,8 @@ if TYPE_CHECKING:
 
 
 VMajor = 0
-VMinor = 6
-VPatch = 0
+VMinor = 5
+VPatch = 1
 
 LEVELS = [
     "1-1",
