@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 
 VMajor = 0
-VMinor = 5
+VMinor = 6
 VPatch = 0
 
 LEVELS = [
@@ -201,6 +201,7 @@ def get_level_from_values(world_level: int, level_index: int):
 class MarioLandClient(BizHawkClient):
     game = "Super Mario Land"
     system = "GB"
+    patch_suffix = ".apsml"
 
     async def validate_rom(self, ctx: "BizHawkClientContext") -> bool:
         try:
@@ -209,14 +210,11 @@ class MarioLandClient(BizHawkClient):
             if system != "GB":
                 return False
 
-            rom_hash = await bizhawk.get_hash(ctx.bizhawk_ctx)
+            marker = (await bizhawk.read(
+                ctx.bizhawk_ctx, [(0x3FEB, 5, "ROM")]
+            ))[0]
 
-            valid_hashes = {
-                "3a4ddb39b234a67ffb361ee7abc3d23e0a8b1c89", #1.0 Rom
-                "418203621b887caa090215d97e3f509b79affd3e", #1.1 Rom
-            }
-
-            if rom_hash.lower() not in valid_hashes:
+            if marker != b"SMLAP":
                 return False
 
         except bizhawk.RequestFailedError:
@@ -249,7 +247,7 @@ class MarioLandClient(BizHawkClient):
                     (0x64, 1, "HRAM"),  # FFE4 - Level Index
                     (0x74, 1, "HRAM"),  # Secret area value
                     (0x75, 1, "HRAM"),  # World 4 secret area value
-                    (0x1FFF, 1, "WRAM"), # 1UP Value
+                    (0x1C00, 1, "WRAM"), # 1UP Value
                     (0x00AB, 1, "WRAM"), # Level Progress
                 ],
             )
@@ -433,7 +431,7 @@ class MarioLandClient(BizHawkClient):
                     await bizhawk.write(
                         ctx.bizhawk_ctx,
                         [
-                            (0x1FFF, [0], "WRAM"),
+                            (0x1C00, [0], "WRAM"),
                         ],
                     )
 

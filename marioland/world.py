@@ -14,6 +14,12 @@ from .options import MarioLandOptions
 from .regions import LEVELS, BONUS_LEVELS, HEART_LEVELS, create_regions
 from .rules import set_rules
 
+import os
+import pkgutil
+from .rom import MarioLandProcedurePatch, write_tokens
+
+import typing
+import settings
 
 #Reigon Logic
 LEVEL_LOCATIONS = {
@@ -144,12 +150,23 @@ HEART_LOCATIONS = {
     ],
 }
 
+class MarioLandSettings(settings.Group):
+    class RomFile(settings.UserFilePath):
+        """File name of your Super Mario Land (Rev A / v1.1) ROM"""
+        description = "Super Mario Land ROM File"
+        md5s = ["b259feb41811c7e4e1dc200167985c84"]
+
+    rom_file: RomFile = RomFile("Super Mario Land.gb")
+
 class MarioLandWorld(World):
     """
     Archipelago implementation for Super Mario Land.
     """
 
     game = "Super Mario Land"
+
+    settings_key = "marioland_settings"
+    settings: typing.ClassVar[MarioLandSettings]
 
     topology_present = True
 
@@ -311,4 +328,20 @@ class MarioLandWorld(World):
             "bonus_game_checks": bool(self.options.bonus_game_checks.value),
             "heartsanity": bool(self.options.heartsanity.value),
         }
- 
+
+    #Create Patch File
+    def generate_output(self, output_directory: str) -> None:
+        patch = MarioLandProcedurePatch(
+            player=self.player,
+            player_name=self.multiworld.player_name[self.player],
+        )
+        patch.write_file(
+            "base_patch.bsdiff4",
+            pkgutil.get_data(__name__, "data/base_patch.bsdiff4"),
+        )
+        write_tokens(self, patch)
+
+        out_file_name = self.multiworld.get_out_file_name_base(self.player)
+        patch.write(os.path.join(
+            output_directory, f"{out_file_name}{patch.patch_file_ending}"
+        ))
